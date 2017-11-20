@@ -48,7 +48,7 @@ var toolTip = d3.tip()
 
 svg.call(toolTip);
 
-d3.csv("/data/Brawley-Street-Built-Environment.csv", 
+d3.csv("../data/Brawley-Street-Built-Environment.csv", 
   function(d){
     return {
       st_number: +d["SITUS STREET NUMBER17"],
