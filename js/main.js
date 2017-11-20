@@ -7,6 +7,7 @@ $("#yearSlider").slider({
 $("#yearSlider").on('change', function(event){
     // Update the chart on the new value
     updateApprChart(event.value.newValue);
+    updateApprHist(event.value.newValue);
 });
 
 $("#yearSlider2").slider({
@@ -19,13 +20,32 @@ $("#yearSlider2").on('change', function(event){
     updateStatusChart(event.value.newValue);
 });
 
-var svg = d3.selectAll('svg');
+var svg = d3.select("#appr svg");
 
 // Get layout parameters
 var svgWidth = +svg.attr('width');
 var svgHeight = +svg.attr('height');
 
 var padding = {t: 60, r: 40, b: 40, l: 40};
+
+var toolTip = d3.tip()
+  .attr("class", "d3-tip")
+  .offset([-2, 2])
+  .html(function(d) {
+      return "<h5>"+d.st_number + " " + d.st_name+"</h5><table><thead><tr><td>Appraisal Value</td></thead>"
+             + "<tbody><tr><td>"+d.appr_16+"</td></tr></tbody></table>"
+  });
+
+//can possibly move into csv read method
+svg.append("svg:image")
+    .attr("xlink:href", "brawley_map.PNG")
+    .attr("x", -4)
+    .attr("y", 10)
+    .attr("width", chartWidth)
+    .attr("height", chartHeight);
+
+
+var svg = d3.select("#stat svg");
 
 svg.append("svg:image")
     .attr("xlink:href", "brawley_map.PNG")
@@ -38,17 +58,11 @@ svg.append("svg:image")
 var chartWidth = svgWidth - padding.l - padding.r;
 var chartHeight = svgHeight - padding.t - padding.b;
 
-var toolTip = d3.tip()
-  .attr("class", "d3-tip")
-  .offset([-2, 2])
-  .html(function(d) {
-      return "<h5>"+d.st_number + " " + d.st_name+"</h5><table><thead><tr><td>Appraisal Value</td></thead>"
-             + "<tbody><tr><td>"+d.appr_16+"</td></tr></tbody></table>"
-  });
+svg = d3.selectAll("svg");
 
 svg.call(toolTip);
 
-d3.csv("../data/Brawley-Street-Built-Environment.csv", 
+d3.csv("./Brawley-Street-Built-Environment.csv", 
   function(d){
     return {
       st_number: +d["SITUS STREET NUMBER17"],
@@ -66,6 +80,7 @@ d3.csv("../data/Brawley-Street-Built-Environment.csv",
     };
   },
 
+
   function(error, dataset) {
     if (error) {console.log(error)};
     data = dataset;
@@ -78,11 +93,11 @@ d3.csv("../data/Brawley-Street-Built-Environment.csv",
       .domain(d3.extent(data, function(d){return d.y}))
       .range([0, chartWidth]);
 
-    console.log(d3.extent(data, function(d){return d.y}));
-
     apprScale = d3.scaleLog()
       .domain([1, d3.max(data, function(d) {return d.appr_16})])
       .range([0,chartHeight/2.0]);
+
+    
 
     chartAppr = d3.select("#appr svg").append('g')
           .attr('transform', 'translate('+[padding.l, padding.t]+')');
@@ -90,9 +105,72 @@ d3.csv("../data/Brawley-Street-Built-Environment.csv",
     chartStatus = d3.select('#stat svg').append('g')
           .attr('transform', 'translate('+[padding.l, padding.t]+')');
 
+
+    //APPRAISAL HISTOGRAM THINGS
+    var svg = d3.select("#appr-hist svg");
+
+    chartApprHist = svg.append('g')
+          .attr('transform', 'translate('+[padding.l, padding.t]+')');
+
+    // Get layout parameters
+    var svgHistHeight = +svg.attr('height');
+    var histHeight = svgHistHeight - padding.t - padding.b;
+
+    histXScale = d3.scaleLinear()
+      .domain([d3.min(data, function(d) {return d.appr_14}), d3.max(data, function(d) {return d.appr_16})])
+      .range([0, chartWidth]);
+
+    histYScale = d3.scaleLinear()
+      .domain([0,25])
+      .range([histHeight, 0]);
+    
+    updateApprHist(2014);
     updateApprChart(2014);
     updateStatusChart(2015);
 });
+
+function updateApprHist(year) {
+  year -= 2000;
+  var bins = d3.histogram()
+    .domain([d3.min(data, function(d) {return d.appr_14}), d3.max(data, function(d) {return d.appr_16})])
+    .thresholds(histXScale.ticks(300))
+    .value(function(d) {return d['appr_'+year]})
+    (data);
+
+  bins = bins.filter(function(d){return d.length > 0});
+
+  var binScale = d3.scaleLinear()
+    .domain([0, bins.length])
+    .range([0, chartWidth]);
+
+  chartApprHist.selectAll('.dot_a').remove();
+
+  var circles = chartApprHist.selectAll('.dot_a')
+    .data(data, function(d) {
+        return {appr : d["appr_" + year]};
+      });
+
+  for (var i = 0; i < bins.length; i++) {
+    var count = 0;
+    var dotsi = chartApprHist.selectAll('.dot' + i)
+      .data(bins[i]);
+      
+    var dotsEnter = dotsi.enter()
+      .append('circle')
+      .attr('class', 'dot_a')
+      .attr('r', 5)
+      .attr('cx', binScale(i))
+      .attr('cy', function (d) {count += 1; return histYScale(count);})
+      .on('mouseover', function(d) {console.log(year);select_points(d);})
+      .on('mouseout', function(d) {deselect_points(d);});
+
+    dotsEnter.append('text').text(year);
+      //.style('fill', function(d) {return color_scale(d[_this.color_attr], _this.color_attr)});
+    
+    circles.merge(dotsEnter);
+  }
+  
+}
 
 
 function updateApprChart(year) {
@@ -107,11 +185,6 @@ function updateApprChart(year) {
       .append('g')
       .attr('class', 'bar')
 
-  
-      // .attr('transform', function(d) {
-      //     return 'translate('+[yScale(d.y), xScale(d.x)]+')';
-      // });
-
   circlesEnter.append('rect')
       .attr('x', function(d) {return yScale(d.y);})
       .attr('y', function(d) {return xScale(d.x) - ( isNaN(d['appr_'+year]) ? 1 : apprScale(d['appr_'+year]));})
@@ -121,8 +194,8 @@ function updateApprChart(year) {
       .style('stroke', '#ffffff');
 
   circlesEnter
-    .on('mouseover', toolTip.show)
-    .on('mouseout', toolTip.hide);
+    .on('mouseover', function(d) {select_points(d);})
+    .on('mouseout', function(d) {deselect_points(d);});
 
   circles.merge(circlesEnter);
 
@@ -170,10 +243,26 @@ function updateStatusChart(year) {
       .style('stroke', '#ffffff');
 
   circlesEnter
-    .on('mouseover', toolTip.show)
-    .on('mouseout', toolTip.hide);
+    .on('mouseover', function(d) {select_points(d);})
+    .on('mouseout', function(d) {deselect_points(d);});
 
   circles.merge(circlesEnter);
 
   circles.exit().remove();
+}
+
+function select_points(point) {
+  d3.selectAll("svg").selectAll(".dot")
+    .classed("hidden", function(d){
+        return point.st_number != d.st_number || point.st_name != d.st_name;
+    });
+
+  d3.selectAll("svg").selectAll(".bar")
+    .classed("hidden", function(d){
+        return point.st_number != d.st_number || point.st_name != d.st_name;
+    });
+}
+
+function deselect_points(d) {
+  d3.selectAll("svg").selectAll('.hidden').classed('hidden', false);
 }

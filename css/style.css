@@ -44,6 +44,10 @@ label {
     opacity: 0.5;
 }
 
+.hidden {
+  opacity: 0.2;
+}
+
 .d3-tip {
   line-height: 1;
   padding: 6px;
