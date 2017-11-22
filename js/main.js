@@ -5,7 +5,6 @@ $("#yearSlider").slider({
 });
 // Listens to the on "change" event for the slider
 $("#yearSlider").on('change', function(event){
-    // Update the chart on the new value
     updateApprChart(event.value.newValue);
     updateApprHist(event.value.newValue);
 });
@@ -16,7 +15,6 @@ $("#yearSlider2").slider({
 });
 // Listens to the on "change" event for the slider
 $("#yearSlider2").on('change', function(event){
-    // Update the chart on the new value
     updateStatusChart(event.value.newValue);
 });
 
@@ -119,10 +117,12 @@ d3.csv("./Brawley-Street-Built-Environment.csv",
     // Get layout parameters
     var svgHistHeight = +svg.attr('height');
     var histHeight = svgHistHeight - padding.t - padding.b;
+    var svgHistWidth = +svg.attr('width');
+    var histWidth = svgHistWidth - padding.l - padding.r;
 
     histXScale = d3.scaleLog()
     .domain([1, 409])
-    .range([0, chartWidth]);
+    .range([0, histWidth]);
 
     var histXAxis = chartApprHist.append('g')
     .attr('class', 'x axis')
@@ -134,22 +134,18 @@ d3.csv("./Brawley-Street-Built-Environment.csv",
     histYScale = d3.scaleLinear()
       .domain([0,25])
       .range([histHeight, 0]);
-
-    //set up bins for histogram
-    // bins = histXScale.ticks(300);
-    // console.log(bins);
-
     
     updateApprHist(2014);
     updateApprChart(2014);
+
     updateStatusChart(2015);
 });
 
 var owner_color_map = {
-  0:"#54e565",
-  1:"#e57a54",
-  2:"#4286f4",
-  3:"#f4ee41",
+  0:"#0d2526",
+  1:"#370533",
+  2:"#176d5d",
+  3:"#080540",
 };
 
 
@@ -191,63 +187,36 @@ function updateApprHist(year) {
       var t = histBins(d['appr_'+year]);
       return 'translate('+[histXScale(t[0]), histYScale(t[1])]+')';
     });
-  }
-  //circles.exit().remove();
-
-
-    // circles = chartAppr.selectAll('.bar')
-    //   .data(data, function(d) {
-    //     return {appr : d["appr_" + year]};
-    //   });
-
-
-    // for (var i = 0; i < bins.length; i++) {
-    //   var count = 0;
-    //   var dotsi = chartAppr.selectAll('.bar' + i)
-    //     .data(bins[i]);
-        
-    //   var dotsEnter = dotsi.enter()
-    //     .append('rect')
-    //     .attr('class', 'bar')
-    //     .attr('x', function(d) {return yScale(d.y);})
-    //     .attr('y', function(d) {return xScale(d.x)-5;})
-    //     .attr('width', 8)
-    //     .attr('height', 8)
-    //     .style('fill', d3.rgb(i*10 + 100, 70, 70 + i*10))
-    //     .style('stroke', '#ffffff')
-    //     .on('mouseover', function(d) {select_points(d);})
-    //     .on('mouseout', function(d) {deselect_points(d);});
-
-    //   circles.merge(dotsEnter);
-    // }
-
-    // circles.exit().remove();
-  
-
-
+}
 
 function updateApprChart(year) {
   year -= 2000;
   
-  }
+  var bars = chartAppr.selectAll('.bar')
+    .data(data, function(d) {
+        return {appr : d["appr_" + year]};
+      });
+      
+  var barsEnter = bars.enter()
+    .append('rect')
+    .attr('class', 'bar')
+    .attr('x', function(d) {return yScale(d.y);})
+    .attr('y', function(d) {return xScale(d.x)-5;})
+    .attr('width', 8)
+    .attr('height', 8)
+    
+    .style('stroke', '#ffffff')
+    .on('mouseover', function(d) {select_points(d);})
+    .on('mouseout', function(d) {deselect_points(d);});
 
-  
-
-  // circlesEnter.append('rect')
-  //     .attr('x', function(d) {return yScale(d.y);})
-  //     .attr('y', function(d) {return xScale(d.x) - ( isNaN(d['appr_'+year]) ? 1 : apprScale(d['appr_'+year]));})
-  //     .attr('width', 6)
-  //     .attr('height', function(d) {return isNaN(d['appr_'+year]) ? 1 : apprScale(d['appr_'+year]);})
-  //     .style('fill', "#2C514C")
-  //     .style('stroke', '#ffffff');
-
-  // circlesEnter
-  //   .on('mouseover', function(d) {select_points(d);})
-  //   .on('mouseout', function(d) {deselect_points(d);});
-
-  // circles.merge(circlesEnter)
-
-  //circles.exit().remove();
+  bars.merge(barsEnter)
+    .transition()
+    .duration(750)
+    .style('fill', function(d) {
+        var bin = histBins(d['appr_'+year])[0];
+        return d3.hsv(180, 1, bin/20.0);
+      });
+}
 
 
 var color_status_map = {"Abandoned Lot": "#801515",
@@ -317,7 +286,7 @@ function select_points(point) {
     .enter().append('g')
     .attr('class', 'table')
     .attr('id', '1')
-    .attr('transform', 'translate('+[700,50]+')');
+    .attr('transform', 'translate('+[200,50]+')');
     
   table.append('text')
     .text(point.st_number + ' ' + point.st_name);

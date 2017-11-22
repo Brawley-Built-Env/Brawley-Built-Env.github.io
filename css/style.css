@@ -7,6 +7,10 @@
   stroke-dasharray: 5,5;
 }
 
+.bg {
+  opacity: 0.5;
+}
+
 .tooltip {
     opacity: 1;
 }
@@ -17,10 +21,6 @@
 
 .slider-handle.round {
     background-image: linear-gradient(to bottom,#979797 0,#707070 100%);
-}
-
-.dot {
-    opacity: 0.5;
 }
 
 label {
