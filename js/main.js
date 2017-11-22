@@ -60,10 +60,8 @@ var chartHeight = svgHeight - padding.t - padding.b;
 
 svg = d3.selectAll("svg");
 
-svg.call(toolTip);
-
 d3.csv("./Brawley-Street-Built-Environment.csv", 
-  function(d){
+  function(d,i){
     return {
       st_number: +d["SITUS STREET NUMBER17"],
       st_name: d["SITUS ADDRESS17"],
@@ -76,7 +74,13 @@ d3.csv("./Brawley-Street-Built-Environment.csv",
       appr_15: +d["TOTAL APPRAISED15"],
       appr_14: +d["TOTAL APPRAISED14"],
       status_15: d["CODE15"],
-      status_17: d["Built Environment CODE17"]
+      status_17: d["Built Environment CODE17"],
+      tax_14: +d["TOTAL TAX DUE 2015"],
+      tax_15: +d["TOTAL TAX DUE 2016"],
+      tax_16: +d["total tax due 2017"],
+      owner_code: +d["owner_code"],
+      id: d['OBJECTID1'],
+      index: i
     };
   },
 
@@ -116,91 +120,135 @@ d3.csv("./Brawley-Street-Built-Environment.csv",
     var svgHistHeight = +svg.attr('height');
     var histHeight = svgHistHeight - padding.t - padding.b;
 
-    histXScale = d3.scaleLinear()
-      .domain([d3.min(data, function(d) {return d.appr_14}), d3.max(data, function(d) {return d.appr_16})])
-      .range([0, chartWidth]);
+    histXScale = d3.scaleLog()
+    .domain([1, 409])
+    .range([0, chartWidth]);
+
+    var histXAxis = chartApprHist.append('g')
+    .attr('class', 'x axis')
+    .attr('transform', 'translate('+[0, histHeight]+')')
+    .call(d3.axisBottom(histXScale)
+      .tickValues([1,2,3,4,5,7,10, 15,21,25, 39, 53, 150, 400])
+      .tickFormat(function(d) {return '<'+d3.format(".2s")(d*5000)}));
 
     histYScale = d3.scaleLinear()
       .domain([0,25])
       .range([histHeight, 0]);
+
+    //set up bins for histogram
+    // bins = histXScale.ticks(300);
+    // console.log(bins);
+
     
     updateApprHist(2014);
     updateApprChart(2014);
     updateStatusChart(2015);
 });
 
+var owner_color_map = {
+  0:"#54e565",
+  1:"#e57a54",
+  2:"#4286f4",
+  3:"#f4ee41",
+};
+
+
+var counts = {};
+function histBins(appr_value) {
+  var x = parseInt(appr_value / 5000) + 1;
+  if (x in counts){
+      counts[x] += 1;
+      return [x, counts[x]];
+  } else {
+    counts[x] = 0;
+    return [x, 0];
+  }
+}
+
 function updateApprHist(year) {
   year -= 2000;
-  var bins = d3.histogram()
-    .domain([d3.min(data, function(d) {return d.appr_14}), d3.max(data, function(d) {return d.appr_16})])
-    .thresholds(histXScale.ticks(300))
-    .value(function(d) {return d['appr_'+year]})
-    (data);
 
-  bins = bins.filter(function(d){return d.length > 0});
+  counts = {};
 
-  var binScale = d3.scaleLinear()
-    .domain([0, bins.length])
-    .range([0, chartWidth]);
+  var dots = chartApprHist.selectAll('.dot')
+    .data(data.sort(function(a,b) {return d3.ascending(a.owner_code, b.owner_code)}), function(d) {return d.id});
 
-  chartApprHist.selectAll('.dot_a').remove();
 
-  var circles = chartApprHist.selectAll('.dot_a')
-    .data(data, function(d) {
-        return {appr : d["appr_" + year]};
-      });
-
-  for (var i = 0; i < bins.length; i++) {
-    var count = 0;
-    var dotsi = chartApprHist.selectAll('.dot' + i)
-      .data(bins[i]);
-      
-    var dotsEnter = dotsi.enter()
-      .append('circle')
-      .attr('class', 'dot_a')
-      .attr('r', 5)
-      .attr('cx', binScale(i))
-      .attr('cy', function (d) {count += 1; return histYScale(count);})
-      .on('mouseover', function(d) {console.log(year);select_points(d);})
-      .on('mouseout', function(d) {deselect_points(d);});
-
-    dotsEnter.append('text').text(year);
-      //.style('fill', function(d) {return color_scale(d[_this.color_attr], _this.color_attr)});
-    
-    circles.merge(dotsEnter);
-  }
+  var dotsEnter = dots.enter()
+    .append('circle')
+    .attr('r', 5)
+    .attr('class', 'dot')
+    //.attr('id', function(d){return 'a'+d.id})
+    .attr('r', 5)
+    .style('fill', function(d) {return colorScale(d, 'owner_code', owner_color_map)})
+    .on('mouseover', function(d) {select_points(d);})
+    .on('mouseout', function(d) {deselect_points(d);});
   
-}
+  dots.merge(dotsEnter)
+    .transition()
+    .duration(750)
+    .attr('transform', function(d) {
+      var t = histBins(d['appr_'+year]);
+      return 'translate('+[histXScale(t[0]), histYScale(t[1])]+')';
+    });
+  }
+  //circles.exit().remove();
+
+
+    // circles = chartAppr.selectAll('.bar')
+    //   .data(data, function(d) {
+    //     return {appr : d["appr_" + year]};
+    //   });
+
+
+    // for (var i = 0; i < bins.length; i++) {
+    //   var count = 0;
+    //   var dotsi = chartAppr.selectAll('.bar' + i)
+    //     .data(bins[i]);
+        
+    //   var dotsEnter = dotsi.enter()
+    //     .append('rect')
+    //     .attr('class', 'bar')
+    //     .attr('x', function(d) {return yScale(d.y);})
+    //     .attr('y', function(d) {return xScale(d.x)-5;})
+    //     .attr('width', 8)
+    //     .attr('height', 8)
+    //     .style('fill', d3.rgb(i*10 + 100, 70, 70 + i*10))
+    //     .style('stroke', '#ffffff')
+    //     .on('mouseover', function(d) {select_points(d);})
+    //     .on('mouseout', function(d) {deselect_points(d);});
+
+    //   circles.merge(dotsEnter);
+    // }
+
+    // circles.exit().remove();
+  
+
 
 
 function updateApprChart(year) {
   year -= 2000;
-  var circles = chartAppr.selectAll('.bar')
-      .data(data, function(d) {
-        return {appr : d["appr_" + year]};
-      });
+  
+  }
 
+  
 
-  var circlesEnter = circles.enter()
-      .append('g')
-      .attr('class', 'bar')
+  // circlesEnter.append('rect')
+  //     .attr('x', function(d) {return yScale(d.y);})
+  //     .attr('y', function(d) {return xScale(d.x) - ( isNaN(d['appr_'+year]) ? 1 : apprScale(d['appr_'+year]));})
+  //     .attr('width', 6)
+  //     .attr('height', function(d) {return isNaN(d['appr_'+year]) ? 1 : apprScale(d['appr_'+year]);})
+  //     .style('fill', "#2C514C")
+  //     .style('stroke', '#ffffff');
 
-  circlesEnter.append('rect')
-      .attr('x', function(d) {return yScale(d.y);})
-      .attr('y', function(d) {return xScale(d.x) - ( isNaN(d['appr_'+year]) ? 1 : apprScale(d['appr_'+year]));})
-      .attr('width', 6)
-      .attr('height', function(d) {return isNaN(d['appr_'+year]) ? 1 : apprScale(d['appr_'+year]);})
-      .style('fill', "#2C514C")
-      .style('stroke', '#ffffff');
+  // circlesEnter
+  //   .on('mouseover', function(d) {select_points(d);})
+  //   .on('mouseout', function(d) {deselect_points(d);});
 
-  circlesEnter
-    .on('mouseover', function(d) {select_points(d);})
-    .on('mouseout', function(d) {deselect_points(d);});
+  // circles.merge(circlesEnter)
 
-  circles.merge(circlesEnter);
+  //circles.exit().remove();
 
-  circles.exit().remove();
-}
 
 var color_status_map = {"Abandoned Lot": "#801515",
   "Business - Operational": "#162955",
@@ -214,9 +262,9 @@ var color_status_map = {"Abandoned Lot": "#801515",
   "Vacant - Needs Improvement": "#682C01",
   "Vacant Lot": "#801515"};
 
-function colorScale(d, year) {
-  if (d['status_' + year] in color_status_map){
-    return color_status_map[d['status_' + year]];
+function colorScale(d, attr, map) {
+  if (d[attr] in map){
+    return map[d[attr]];
   }
   
   return "#E0E2E3";
@@ -239,14 +287,14 @@ function updateStatusChart(year) {
       .attr('cx', function(d) {return yScale(d.y);})
       .attr('cy', function(d) {return xScale(d.x);})
       .attr('r', 6)
-      .style('fill', function(d) {return colorScale(d, year);})
+      .style('fill', function(d) {return colorScale(d, 'status_'+year, color_status_map);})
       .style('stroke', '#ffffff');
 
   circlesEnter
     .on('mouseover', function(d) {select_points(d);})
     .on('mouseout', function(d) {deselect_points(d);});
 
-  circles.merge(circlesEnter);
+  circles.merge(circlesEnter)
 
   circles.exit().remove();
 }
@@ -261,8 +309,37 @@ function select_points(point) {
     .classed("hidden", function(d){
         return point.st_number != d.st_number || point.st_name != d.st_name;
     });
+
+  d3.selectAll(".table").remove();
+
+  var table = d3.select("#appr-hist svg").selectAll('div')
+    .data([point])
+    .enter().append('g')
+    .attr('class', 'table')
+    .attr('id', '1')
+    .attr('transform', 'translate('+[700,50]+')');
+    
+  table.append('text')
+    .text(point.st_number + ' ' + point.st_name);
+    
+
+  table.append('text')
+    .text('2014 Appraisal | $' + point.appr_14)
+    .attr('transform', 'translate('+[0,15]+')');
+
+  table.append('text')
+    .text('2015 Appraisal | $' + point.appr_15)
+    .attr('transform', 'translate('+[0,30]+')');
+
+  table.append('text')
+    .text('2016 Appraisal | $' + point.appr_16)
+    .attr('transform', 'translate('+[0,45]+')');
+
+  //table.merge(tableEnter);
+    
 }
 
 function deselect_points(d) {
   d3.selectAll("svg").selectAll('.hidden').classed('hidden', false);
+  d3.selectAll(".table").remove();
 }
