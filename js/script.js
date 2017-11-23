@@ -203,7 +203,7 @@ function setYear(yearStr) {
             });
         svg.selectAll(".time-node")
             .classed("hidden", function(d){
-                return !validYears.includes(yearStr);
+                return !validYears.includes(d);
             });
 
         updateHist();
@@ -357,7 +357,7 @@ function select_points(point) {
     .enter().append('g')
     .attr('class', 'table')
     .attr('id', '1')
-    .attr('transform', 'translate('+[50,50]+')');
+    .attr('transform', 'translate('+[100,100]+')');
     
   table.append('text')
     .text(point.st_number + ' ' + point.st_name);
