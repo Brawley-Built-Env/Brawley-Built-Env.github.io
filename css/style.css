@@ -11,6 +11,10 @@
   opacity: 0.5;
 }
 
+.selected circle{
+  fill: #ffcc66;
+}
+
 .tooltip {
     opacity: 1;
 }

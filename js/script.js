@@ -16,11 +16,10 @@ svg.append("image")
 
 
 var geoCell = svg.append('g')
-    .attr('transform', 'translate('+[0, 0]+')');
 
-var HIST_CELL_X = svgWidth / 3 * 2;
+var HIST_CELL_X = svgWidth / 2;
 
-var TABLE_CELL_X = svgWidth / 3 * 2;
+var TABLE_CELL_X = svgWidth / 2;
 var TABLE_CELL_Y = svgHeight / 2;
 
 var geoWidth = svgWidth /3;
@@ -32,11 +31,13 @@ var histHeight = svgHeight - TABLE_CELL_Y;
 var tableWidth = svgWidth - TABLE_CELL_X;
 var tableHeight = svgHeight - TABLE_CELL_Y;
 
-var histCell = svg.append('g')
-    .attr('transform', 'translate('+[HIST_CELL_X, 0]+')');
+
 
 var tableCell = svg.append('g')
     .attr('transform', 'translate('+[TABLE_CELL_X, TABLE_CELL_Y]+')');
+
+var histCell = svg.append('g')
+    .attr('transform', 'translate('+[HIST_CELL_X, 0]+')');
 
 histCell.selectAll('rect').data(['h'])
     .enter().append('rect')
@@ -52,7 +53,47 @@ tableCell.selectAll('rect').data(['h'])
     .attr('width', tableWidth)
     .attr('height', tableHeight);
 
-var padding = {l: 10, r: 10, t: 10, b: 10};
+var tlPadding = 50;
+
+years = ['2014', '2015', '2016', '2017']
+timelineScale = d3.scaleLinear()
+    .domain([0, years.length-1])
+    .range([0, svgHeight/2])
+
+var timeLine = svg.append('g')
+    .attr('transform', 'translate('+[tlPadding, tlPadding]+')');
+
+timeLine.selectAll('rect').data(['h'])
+    .enter().append('rect')
+    .attr('x', -5)
+    .attr('class', 'hidden')
+    .attr('fill','#ffffff')
+    .attr('width', 10)
+    .attr('height', tableHeight);
+
+var yearNodes = timeLine.selectAll("g node")
+    .data(years);
+
+var nodesEnter = yearNodes.enter()
+    .append('g')
+    .attr('id', function(d){return 'node'+d})
+    .attr('class', 'time-node')
+    .attr('transform', function(d, i) {return 'translate('+[0, timelineScale(i)]+')'})
+    .on('click', function(d){setYear(d);});
+
+nodesEnter.append('circle')
+    .attr('fill', '#ffffff')
+    .attr('stroke', '#555')
+    .attr('r', 20);
+
+nodesEnter.append('text')
+    .text(function(d){return d})
+    .attr('transform', 'translate(-17, 5)');
+
+var padding = {l: 20, r: 40, t: 30, b: 50};
+
+var year;
+var validYears;
 
 var owner_color_map = {
   0:"#0d2526",
@@ -72,12 +113,102 @@ var color_status_map = {"Abandoned Lot": "#801515",
   "Vacant - Dilapidated": "#682501",
   "Vacant - Good Condition": "#B85500",
   "Vacant - Needs Improvement": "#682C01",
-  "Vacant Lot": "#801515"};
+  "Vacant Lot": "#801515",
+  "NULL": "#E0E2E3"};
+
+var status_list = Object.keys(color_status_map);
 
 function setApprCells() {
-    histCell.selectAll('.dot').remove()
-    //etc
-    //make buttons for years
+    histCell.selectAll('.x-axis').remove()
+    validYears = ['2014','2015','2016']
+
+    attr = 'appr';
+    color_attr = 'owner_code';
+    
+    map = owner_color_map;
+
+    histXScale = d3.scaleLog()
+    .domain([1, 409])
+    .range([padding.r, histWidth-padding.l]);
+
+    histYScale = d3.scaleLinear()
+      .domain([0,25])
+      .range([histHeight- padding.b, padding.t]);
+
+    step_size = step_sizes[attr]
+
+    setYear('2014');
+
+    //make axis
+    var histXAxis = histCell.append('g')
+    .attr('class', 'x-axis')
+    .attr('transform', 'translate('+[0, histHeight-padding.b]+')')
+    .call(d3.axisBottom(histXScale)
+      .tickValues([1,2,3,4,5,7,10, 15,21,25, 39, 53, 150, 400])
+      .tickFormat(function(d) {return '<'+d3.format(".2s")(d*5000)}))
+    .selectAll("text")  
+     .style("text-anchor", "end")
+     .attr("dx", "-.8em")
+     .attr("dy", ".15em")
+     .attr("transform", "rotate(-65)");
+}
+
+function setTaxCells() {
+
+}
+
+function setOccupancyCells() {
+    histCell.selectAll('.x-axis').remove()
+    validYears = ['2015', '2017'];
+
+    attr = 'status_code';
+    color_attr = 'owner_code';
+    
+    map = owner_color_map;
+
+    histXScale = d3.scaleLinear()
+        .domain([1, status_list.length])
+        .range([padding.r, histWidth-padding.l]);
+
+    histYScale = d3.scaleLinear()
+      .domain([0,28])
+      .range([histHeight-padding.b, padding.t]);
+
+    step_size = 1;
+
+    setYear('2015');
+
+    //make axis
+    var histXAxis = histCell.append('g')
+    .attr('class', 'x-axis')
+    .attr('transform', 'translate('+[0, histHeight-padding.b]+')')
+    .call(d3.axisBottom(histXScale)
+      .tickFormat(function(d) {return status_list[d-1]}))
+    .selectAll("text")  
+     .style("text-anchor", "end")
+     .attr("dx", "-.8em")
+     .attr("dy", ".15em")
+     .attr("transform", "rotate(-65)");
+}
+
+
+
+function setYear(yearStr) {
+    new_year = parseInt(yearStr) - 2000;
+    if ((year == null || year != new_year) && validYears.includes(yearStr)) { //add some other conditionals too
+        year = new_year;
+        svg.selectAll(".time-node")
+            .classed("selected", function(d){
+                return d == yearStr;
+            });
+        svg.selectAll(".time-node")
+            .classed("hidden", function(d){
+                return !validYears.includes(yearStr);
+            });
+
+        updateHist();
+        updateGeo();
+    }
 }
 
 
@@ -89,11 +220,11 @@ d3.csv("./Brawley-Street-Built-Environment.csv",
       appr_16: +d["TOTAL APPRAISED16"],
       x: +d.x,
       y: +d.y,
-      fulton_16: +d["FULTON TOTAL DUE16"],
-      atl_16: +d["CITY TOTAL DUE16"],
       owner_16: d["CURRENT OWNER NAME16"],
       appr_15: +d["TOTAL APPRAISED15"],
       appr_14: +d["TOTAL APPRAISED14"],
+      status_code_15: status_list.indexOf(d["CODE15"]),
+      status_code_17: status_list.indexOf(d["Built Environment CODE17"]),
       status_15: d["CODE15"],
       status_17: d["Built Environment CODE17"],
       tax_14: +d["TOTAL TAX DUE 2015"],
@@ -114,29 +245,12 @@ d3.csv("./Brawley-Street-Built-Environment.csv",
       .domain([-84.415, -84.410])
       .range([185, geoWidth]);
 
-    console.log((d3.extent(data, function(d){return d.y})));
     geoYScale = d3.scaleLinear()
       .domain(d3.extent(data, function(d){return d.y}))
       .range([geoHeight-60, 30]);
 
-    attr = 'appr';
-    color_attr = 'owner_code';
-    year = 14;
-    map = owner_color_map;
-
-    histXScale = d3.scaleLog()
-    .domain([1, 409])
-    .range([padding.r, histWidth-padding.l]);
-
-    histYScale = d3.scaleLinear()
-      .domain([0,25])
-      .range([histHeight- padding.b, padding.t]);
-
-    step_size = step_sizes[attr]
-
-    updateHist();
-    updateGeo();
-
+    console.log(validYears);
+    setApprCells();
 });
 
 var step_sizes = {
@@ -144,8 +258,13 @@ var step_sizes = {
     };
 
 var counts = {};
-function histBins(appr_value) {
-  var x = parseInt(appr_value / step_size) + 1;
+function histBins(d) {
+  var value = d[attr+'_'+year];
+
+  var x = parseInt(value / step_size) + 1;
+  if (value == 'NULL') {
+    x = 0;
+  }
   if (x in counts){
       counts[x] += 1;
       return [x, counts[x]];
@@ -158,7 +277,6 @@ function histBins(appr_value) {
 
 //keep track of attr, coloring, year, color map
 function updateHist() {
-
     counts = {};
 
     var dots = histCell.selectAll('.dot')
@@ -178,8 +296,8 @@ function updateHist() {
     .transition()
     .duration(750)
     .attr('transform', function(d) {
-    var t = histBins(d[attr+'_'+year]);
-    return 'translate('+[histXScale(t[0]), histYScale(t[1])]+')';
+      var t = histBins(d);
+      return 'translate('+[histXScale(t[0]), histYScale(t[1])]+')';
     });
 }
 
@@ -197,7 +315,6 @@ function updateGeo() {
     .attr('y', function(d) {return geoYScale(d.y);})
     .attr('width', 5)
     .attr('height', 5)
-    
     .style('stroke', '#ffffff')
     .on('mouseover', function(d) {select_points(d);})
     .on('mouseout', function(d) {deselect_points(d);});
@@ -209,6 +326,8 @@ function updateGeo() {
     //     var bin = histBins(d['appr_'+year])[0];
     //     return d3.hsv(180, 1, bin/20.0);
     //   });
+
+  bars.exit().remove();
 }
 
 function colorScale(d, attr, map) {
@@ -238,7 +357,7 @@ function select_points(point) {
     .enter().append('g')
     .attr('class', 'table')
     .attr('id', '1')
-    .attr('transform', 'translate('+[200,50]+')');
+    .attr('transform', 'translate('+[50,50]+')');
     
   table.append('text')
     .text(point.st_number + ' ' + point.st_name);
@@ -256,11 +375,20 @@ function select_points(point) {
     .text('2016 Appraisal | $' + point.appr_16)
     .attr('transform', 'translate('+[0,45]+')');
 
+  table.append('text')
+    .text('2015 Occupancy Status | ' + point.status_15)
+    .attr('transform', 'translate('+[0,60]+')');
+
+  table.append('text')
+    .text('2017 Occupancy Status | ' + point.status_17)
+    .attr('transform', 'translate('+[0,75]+')');
+
   //table.merge(tableEnter);
     
 }
 
 function deselect_points(d) {
-  svg.selectAll('.hidden').classed('hidden', false);
+  svg.selectAll('.dot.hidden').classed('hidden', false);
+  svg.selectAll('.bar.hidden').classed('hidden', false);
   d3.selectAll(".table").remove();
 }
