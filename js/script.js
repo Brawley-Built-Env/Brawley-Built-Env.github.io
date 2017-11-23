@@ -88,7 +88,7 @@ nodesEnter.append('circle')
 
 nodesEnter.append('text')
     .text(function(d){return d})
-    .attr('transform', 'translate(-17, 5)');
+    .attr('transform', 'translate(-14, 5)');
 
 var padding = {l: 20, r: 40, t: 30, b: 50};
 
@@ -119,8 +119,10 @@ var color_status_map = {"Abandoned Lot": "#801515",
 var status_list = Object.keys(color_status_map);
 
 function setApprCells() {
-    histCell.selectAll('.x-axis').remove()
-    validYears = ['2014','2015','2016']
+    histCell.selectAll('.x-axis').remove();
+    histCell.selectAll('.title').remove();
+
+    validYears = ['2014','2015','2016'];
 
     attr = 'appr';
     color_attr = 'owner_code';
@@ -145,12 +147,17 @@ function setApprCells() {
     .attr('transform', 'translate('+[0, histHeight-padding.b]+')')
     .call(d3.axisBottom(histXScale)
       .tickValues([1,2,3,4,5,7,10, 15,21,25, 39, 53, 150, 400])
-      .tickFormat(function(d) {return '<'+d3.format(".2s")(d*5000)}))
+      .tickFormat(function(d) {return '< $'+d3.format(".2s")(d*5000)}))
     .selectAll("text")  
      .style("text-anchor", "end")
      .attr("dx", "-.8em")
      .attr("dy", ".15em")
      .attr("transform", "rotate(-65)");
+
+     histCell.append('text')
+      .text('Home Appraisal Values')
+      .attr('class', 'title')
+      .attr('transform', 'translate('+[250, 40]+')');
 }
 
 function setTaxCells() {
@@ -158,7 +165,8 @@ function setTaxCells() {
 }
 
 function setOccupancyCells() {
-    histCell.selectAll('.x-axis').remove()
+    histCell.selectAll('.title').remove();
+    histCell.selectAll('.x-axis').remove();
     validYears = ['2015', '2017'];
 
     attr = 'status_code';
@@ -189,6 +197,11 @@ function setOccupancyCells() {
      .attr("dx", "-.8em")
      .attr("dy", ".15em")
      .attr("transform", "rotate(-65)");
+
+    histCell.append('text')
+      .text('Occupancy Status')
+      .attr('class', 'title')
+      .attr('transform', 'translate('+[300, 40]+')');
 }
 
 

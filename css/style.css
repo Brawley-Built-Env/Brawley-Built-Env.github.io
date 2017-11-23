@@ -38,10 +38,9 @@ label {
     stroke: #555;
 }
 
-.legend text {
-    font-family: "Open Sans";
+text {
     font-size: 12px;
-    fill: #555;
+    font-weight: bold;
 }
 
 .bar {
