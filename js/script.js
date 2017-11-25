@@ -18,18 +18,19 @@ svg.append("image")
 var geoCell = svg.append('g')
 
 var HIST_CELL_X = svgWidth / 2;
+var HIST_CELL_Y = svgHeight / 3;
 
 var TABLE_CELL_X = svgWidth / 2;
-var TABLE_CELL_Y = svgHeight / 2;
+var TABLE_CELL_Y = 0;
 
 var geoWidth = svgWidth /3;
 var geoHeight = svgHeight;
 
 var histWidth = svgWidth - HIST_CELL_X;
-var histHeight = svgHeight - TABLE_CELL_Y;
+var histHeight = svgHeight - HIST_CELL_Y;
 
 var tableWidth = svgWidth - TABLE_CELL_X;
-var tableHeight = svgHeight - TABLE_CELL_Y;
+var tableHeight = svgHeight - histHeight;
 
 
 
@@ -37,7 +38,7 @@ var tableCell = svg.append('g')
     .attr('transform', 'translate('+[TABLE_CELL_X, TABLE_CELL_Y]+')');
 
 var histCell = svg.append('g')
-    .attr('transform', 'translate('+[HIST_CELL_X, 0]+')');
+    .attr('transform', 'translate('+[HIST_CELL_X, HIST_CELL_Y]+')');
 
 histCell.selectAll('rect').data(['h'])
     .enter().append('rect')
@@ -69,7 +70,7 @@ timeLine.selectAll('rect').data(['h'])
     .attr('class', 'hidden')
     .attr('fill','#ffffff')
     .attr('width', 10)
-    .attr('height', tableHeight);
+    .attr('height', svgHeight/2);
 
 var yearNodes = timeLine.selectAll("g node")
     .data(years);
@@ -90,7 +91,7 @@ nodesEnter.append('text')
     .text(function(d){return d})
     .attr('transform', 'translate(-14, 5)');
 
-var padding = {l: 20, r: 40, t: 30, b: 50};
+var padding = {l: 20, r: 40, t: 30, b: 180};
 
 var year;
 var validYears;
@@ -104,16 +105,16 @@ var owner_color_map = {
 
 
 var color_status_map = {"Abandoned Lot": "#801515",
+  "Vacant Lot": "#801515",
+  "Fire Damaged Structure": "#B50009",
+  "Vacant - Dilapidated": "#682501",
+  "Vacant - Needs Improvement": "#682C01",
+  "Vacant - Good Condition": "#B85500",
+  "Occupied - Dilapidated": "#85162E",
+  "Occupied - Needs Improvement": "#64105A",
+  "Occupied - Good Condition": "#126E22",
   "Business - Operational": "#162955",
   "Church": "#FCE433",
-  "Fire Damaged Structure": "#B50009",
-  "Occupied - Dilapidated": "#85162E",
-  "Occupied - Good Condition": "#126E22",
-  "Occupied - Needs Improvement": "#64105A",
-  "Vacant - Dilapidated": "#682501",
-  "Vacant - Good Condition": "#B85500",
-  "Vacant - Needs Improvement": "#682C01",
-  "Vacant Lot": "#801515",
   "NULL": "#E0E2E3"};
 
 var status_list = Object.keys(color_status_map);
@@ -137,6 +138,12 @@ function setApprCells() {
       .domain([0,25])
       .range([histHeight- padding.b, padding.t]);
 
+    gradientScale = d3.scaleLog()
+      .domain([1, 409])
+      .range(["#AA2258", "#23DD99"])
+      .interpolate(d3.interpolateHcl);
+
+
     step_size = step_sizes[attr]
 
     setYear('2014');
@@ -157,10 +164,62 @@ function setApprCells() {
      histCell.append('text')
       .text('Home Appraisal Values')
       .attr('class', 'title')
-      .attr('transform', 'translate('+[250, 40]+')');
+      .attr('transform', 'translate('+[250, 20]+')');
 }
 
 function setTaxCells() {
+    validYears = ['2014','2015','2016'];
+    histCell.selectAll('.x-axis').remove();
+    histCell.selectAll('.title').remove();
+
+    //xScale = d3.scaleLinear().domain([0,1910]).range([padding.r, histWidth-padding.l]);
+
+    // var bins = d3.histogram()
+    // .domain([0,2000])
+    // .thresholds(xScale.ticks(70))
+    // .value(function(d) {return d.tax_14})
+    // (data);
+    // console.log(bins);
+
+    attr = 'tax';
+    color_attr = 'owner_code';
+    step_size = step_sizes[attr];
+
+    map = owner_color_map;
+
+    histXScale = d3.scaleLog()
+    .domain([1,153])
+    .range([padding.r, histWidth-padding.l]);
+
+    //TODO remove placeholder
+    histYScale = d3.scaleLinear()
+      .domain([0,100])
+      .range([histHeight- 55, padding.t]);
+
+    gradientScale = d3.scaleLog()
+      .domain([1,153])
+      .range(["#AA2258", "#23DD99"])
+      .interpolate(d3.interpolateHcl);
+    year = null;
+
+    setYear('2014');
+
+    var histXAxis = histCell.append('g')
+    .attr('class', 'x-axis')
+    .attr('transform', 'translate('+[0, histHeight-55]+')')
+    .call(d3.axisBottom(histXScale)
+      //.tickValues([1,2,3,4,5,7,10, 15,21,25, 39, 53, 150, 400])
+      .tickFormat(function(d) {return '< $'+d3.format(".2s")(d*200)}))
+    .selectAll("text")  
+     .style("text-anchor", "end")
+     .attr("dx", "-.8em")
+     .attr("dy", ".15em")
+     .attr("transform", "rotate(-65)");
+
+     histCell.append('text')
+      .text('Property Taxes')
+      .attr('class', 'title')
+      .attr('transform', 'translate('+[250, 20]+')');
 
 }
 
@@ -182,6 +241,11 @@ function setOccupancyCells() {
       .domain([0,28])
       .range([histHeight-padding.b, padding.t]);
 
+    gradientScale = d3.scaleLog()
+      .domain([1, status_list.length])
+      .range(["#AA2258", "#23DD99"])
+      .interpolate(d3.interpolateHcl);
+
     step_size = 1;
 
     setYear('2015');
@@ -201,7 +265,7 @@ function setOccupancyCells() {
     histCell.append('text')
       .text('Occupancy Status')
       .attr('class', 'title')
-      .attr('transform', 'translate('+[300, 40]+')');
+      .attr('transform', 'translate('+[300, 20]+')');
 }
 
 
@@ -255,26 +319,29 @@ d3.csv("./Brawley-Street-Built-Environment.csv",
     data = dataset;
 
     geoXScale = d3.scaleLinear()
-      .domain([-84.415, -84.410])
+      .domain([-84.4145, -84.4105])
       .range([185, geoWidth]);
 
     geoYScale = d3.scaleLinear()
       .domain(d3.extent(data, function(d){return d.y}))
       .range([geoHeight-60, 30]);
 
-    console.log(validYears);
+    //console.log(validYears);
     setApprCells();
 });
 
 var step_sizes = {
-    'appr' : 5000
+    'appr' : 5000,
+    'tax' : 20
     };
 
 var counts = {};
 function histBins(d) {
   var value = d[attr+'_'+year];
+  //console.log(value);
 
   var x = parseInt(value / step_size) + 1;
+  //console.log(x)
   if (value == 'NULL') {
     x = 0;
   }
@@ -326,19 +393,17 @@ function updateGeo() {
     .attr('class', 'bar')
     .attr('x', function(d) {return geoXScale(d.x);})
     .attr('y', function(d) {return geoYScale(d.y);})
-    .attr('width', 5)
+    .attr('width', 10)
     .attr('height', 5)
     .style('stroke', '#ffffff')
     .on('mouseover', function(d) {select_points(d);})
     .on('mouseout', function(d) {deselect_points(d);});
 
   bars.merge(barsEnter)
-    .transition()
-    .duration(750)
-    // .style('fill', function(d) {
-    //     var bin = histBins(d['appr_'+year])[0];
-    //     return d3.hsv(180, 1, bin/20.0);
-    //   });
+    .style('fill', function(d) {
+        var bin = histBins(d)[0];
+        return gradientScale(bin);
+      });
 
   bars.exit().remove();
 }
