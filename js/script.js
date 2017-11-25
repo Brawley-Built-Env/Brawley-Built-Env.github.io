@@ -146,6 +146,8 @@ function setApprCells() {
 
     step_size = step_sizes[attr]
 
+    //TODO make a better fix -> check what attr is
+    year = null;
     setYear('2014');
 
     //make axis
