@@ -17,10 +17,10 @@ svg.append("image")
 
 var geoCell = svg.append('g')
 
-var HIST_CELL_X = svgWidth / 2;
+var HIST_CELL_X = (svgWidth / 2.5);
 var HIST_CELL_Y = svgHeight / 3;
 
-var TABLE_CELL_X = svgWidth / 2;
+var TABLE_CELL_X = (svgWidth / 2.5);
 var TABLE_CELL_Y = 0;
 
 var geoWidth = svgWidth /3;
@@ -91,17 +91,39 @@ nodesEnter.append('text')
     .text(function(d){return d})
     .attr('transform', 'translate(-14, 5)');
 
-var padding = {l: 20, r: 40, t: 30, b: 180};
+var padding = {l: 20, r: 200, t: 30, b: 180};
 
 var year;
 var validYears;
 
 var owner_color_map = {
-  0:"#0d2526",
-  1:"#370533",
-  2:"#176d5d",
-  3:"#080540",
+  0:"#176D5D",
+  1:"#32021F",
+  2:"#DB5375",
+  3:"#564D65",
 };
+
+timelineScale = d3.scaleLinear()
+    .domain([0, years.length-1])
+    .range([0, svgHeight/6])
+
+var legendNodes = histCell.selectAll('g legend')
+  .data(['Person Owned', 'Investor Owned', 'Church Owned', 'Non-profit/Gov\'t Owned'])
+
+var lNodesEnter = legendNodes.enter()
+  .append('g')
+  .attr('transform', function(d, i) {return 'translate('+[30, padding.t + 70 + timelineScale(i)]+')'});
+
+lNodesEnter.append('circle')
+    .attr('fill', function(d,i) {return owner_color_map[i];})
+    .attr('stroke', '#ffffff')
+    .attr('r', 6);
+
+lNodesEnter.append('text')
+    .text(function(d){return d})
+    .attr('transform', 'translate(12, 5)');
+
+
 
 
 var color_status_map = {"Abandoned Lot": "#801515",
@@ -146,7 +168,8 @@ function setApprCells() {
 
     step_size = step_sizes[attr]
 
-    //TODO make a better fix -> check what attr is
+    //TODO make a better fix -> check what attr is active
+    
     year = null;
     setYear('2014');
 
@@ -155,33 +178,47 @@ function setApprCells() {
     .attr('class', 'x-axis')
     .attr('transform', 'translate('+[0, histHeight-padding.b]+')')
     .call(d3.axisBottom(histXScale)
-      .tickValues([1,2,3,4,5,7,10, 15,21,25, 39, 53, 150, 400])
+      .tickValues([1,2,3,4,5,7,10, 15,21,25, 39, 53, 151, 410])
       .tickFormat(function(d) {return '< $'+d3.format(".2s")(d*5000)}))
     .selectAll("text")  
-     .style("text-anchor", "end")
-     .attr("dx", "-.8em")
-     .attr("dy", ".15em")
-     .attr("transform", "rotate(-65)");
+      .style("text-anchor", "end")
+      .attr("dx", "-.8em")
+      .attr("dy", ".15em")
+      .attr("transform", "rotate(-65)")
+      .on('mouseover', function(d) {
+        d3.select(this)
+          .style('fill', gradientScale(d))
+          .style('stroke', '#000000');
+        set_fill(d);
+      })
+      .on('mouseout', function(d) {
+        d3.select(this).style('fill', '#000000')
+          .style('stroke', 'none');
+        deselect_points(d);
+      });
 
      histCell.append('text')
       .text('Home Appraisal Values')
       .attr('class', 'title')
-      .attr('transform', 'translate('+[250, 20]+')');
+      .attr('transform', 'translate('+[350, 20]+')');
+}
+
+function set_fill(point) {
+  svg.selectAll(".bar")
+    .classed("hidden", function(d){
+        return parseInt(d[attr+'_'+year]/step_size) + 1 != point;
+    });
+
+  svg.selectAll(".dot")
+    .classed("hidden", function(d){
+        return parseInt(d[attr+'_'+year]/step_size) + 1 != point;
+    });
 }
 
 function setTaxCells() {
     validYears = ['2014','2015','2016'];
     histCell.selectAll('.x-axis').remove();
     histCell.selectAll('.title').remove();
-
-    //xScale = d3.scaleLinear().domain([0,1910]).range([padding.r, histWidth-padding.l]);
-
-    // var bins = d3.histogram()
-    // .domain([0,2000])
-    // .thresholds(xScale.ticks(70))
-    // .value(function(d) {return d.tax_14})
-    // (data);
-    // console.log(bins);
 
     attr = 'tax';
     color_attr = 'owner_code';
@@ -210,18 +247,30 @@ function setTaxCells() {
     .attr('class', 'x-axis')
     .attr('transform', 'translate('+[0, histHeight-55]+')')
     .call(d3.axisBottom(histXScale)
-      //.tickValues([1,2,3,4,5,7,10, 15,21,25, 39, 53, 150, 400])
+      //TODO make scales for every year
+      .tickValues([1,2,3,4,5,8,9, 10,14,16, 19, 24, 29, 95,127,152])
       .tickFormat(function(d) {return '< $'+d3.format(".2s")(d*200)}))
     .selectAll("text")  
      .style("text-anchor", "end")
      .attr("dx", "-.8em")
      .attr("dy", ".15em")
-     .attr("transform", "rotate(-65)");
+     .attr("transform", "rotate(-65)")
+     .on('mouseover', function(d) {
+        d3.select(this)
+          .style('fill', gradientScale(d))
+          .style('stroke', '#000000');
+        set_fill(d);
+      })
+      .on('mouseout', function(d) {
+        d3.select(this).style('fill', '#000000')
+          .style('stroke', 'none');
+        deselect_points(d);
+      });
 
      histCell.append('text')
       .text('Property Taxes')
       .attr('class', 'title')
-      .attr('transform', 'translate('+[250, 20]+')');
+      .attr('transform', 'translate('+[350, 20]+')');
 
 }
 
@@ -250,6 +299,7 @@ function setOccupancyCells() {
 
     step_size = 1;
 
+    year = null;
     setYear('2015');
 
     //make axis
@@ -262,12 +312,23 @@ function setOccupancyCells() {
      .style("text-anchor", "end")
      .attr("dx", "-.8em")
      .attr("dy", ".15em")
-     .attr("transform", "rotate(-65)");
+     .attr("transform", "rotate(-65)")
+     .on('mouseover', function(d) {
+        d3.select(this)
+          .style('fill', gradientScale(d))
+          .style('stroke', '#000000');
+        set_fill(d);
+      })
+      .on('mouseout', function(d) {
+        d3.select(this).style('fill', '#000000')
+          .style('stroke', 'none');
+        deselect_points(d);
+      });
 
     histCell.append('text')
       .text('Occupancy Status')
       .attr('class', 'title')
-      .attr('transform', 'translate('+[300, 20]+')');
+      .attr('transform', 'translate('+[350, 20]+')');
 }
 
 
@@ -420,6 +481,8 @@ function colorScale(d, attr, map) {
 }
 
 function select_points(point) {
+  console.log(parseInt(point[attr+'_'+year]/step_size) + 1);
+
   svg.selectAll(".dot")
     .classed("hidden", function(d){
         return point.st_number != d.st_number || point.st_name != d.st_name;
@@ -467,6 +530,7 @@ function select_points(point) {
     
 }
 
+//TODO remove param
 function deselect_points(d) {
   svg.selectAll('.dot.hidden').classed('hidden', false);
   svg.selectAll('.bar.hidden').classed('hidden', false);
