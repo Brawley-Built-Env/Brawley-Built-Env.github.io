@@ -372,7 +372,8 @@ d3.csv("./Brawley-Street-Built-Environment.csv",
       tax_16: +d["total tax due 2017"],
       owner_code: +d["owner_code"],
       id: d['OBJECTID1'],
-      index: i
+      index: i,
+      neighborhood: d['NEIGHBORHOOD']
     };
   },
 
@@ -500,31 +501,63 @@ function select_points(point) {
     .enter().append('g')
     .attr('class', 'table')
     .attr('id', '1')
-    .attr('transform', 'translate('+[100,100]+')');
+    .attr('transform', 'translate('+[tableWidth / 2.1,75]+')');
     
   table.append('text')
-    .text(point.st_number + ' ' + point.st_name);
+    .text(point.st_number + ' ' + point.st_name)
+    .attr('transform', 'translate('+[0,-15]+')')
+    .style("text-anchor", "middle");
+
+  table.append('text')
+    .text('Owner | ' + point.owner_16)
+    .attr('transform', 'translate('+[-150,15]+')')
+    .style("text-anchor", "middle");
+
+  table.append('text')
+    .text('Neighborhood | ' + point.neighborhood)
+    .attr('transform', 'translate('+[-150,30]+')')
+    .style("text-anchor", "middle");
     
 
   table.append('text')
     .text('2014 Appraisal | $' + point.appr_14)
-    .attr('transform', 'translate('+[0,15]+')');
+    .attr('transform', 'translate('+[-150,60]+')')
+    .style("text-anchor", "middle");
 
   table.append('text')
     .text('2015 Appraisal | $' + point.appr_15)
-    .attr('transform', 'translate('+[0,30]+')');
+    .attr('transform', 'translate('+[-150,75]+')')
+    .style("text-anchor", "middle");
 
   table.append('text')
     .text('2016 Appraisal | $' + point.appr_16)
-    .attr('transform', 'translate('+[0,45]+')');
+    .attr('transform', 'translate('+[-150,90]+')')
+    .style("text-anchor", "middle");
 
   table.append('text')
     .text('2015 Occupancy Status | ' + point.status_15)
-    .attr('transform', 'translate('+[0,60]+')');
+    .attr('transform', 'translate('+[150,15]+')')
+    .style("text-anchor", "middle");
 
   table.append('text')
     .text('2017 Occupancy Status | ' + point.status_17)
-    .attr('transform', 'translate('+[0,75]+')');
+    .attr('transform', 'translate('+[150,30]+')')
+    .style("text-anchor", "middle");
+
+  table.append('text')
+    .text('2014 Property Tax | $' + point.tax_14)
+    .attr('transform', 'translate('+[150,60]+')')
+    .style("text-anchor", "middle");
+
+  table.append('text')
+    .text('2015 Property Tax | $' + point.tax_15)
+    .attr('transform', 'translate('+[150,75]+')')
+    .style("text-anchor", "middle");
+
+  table.append('text')
+    .text('2016 Property Tax | $' + point.tax_16)
+    .attr('transform', 'translate('+[150,90]+')')
+    .style("text-anchor", "middle");
 
   //table.merge(tableEnter);
     
