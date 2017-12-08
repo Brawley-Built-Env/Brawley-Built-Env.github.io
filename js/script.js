@@ -12,6 +12,7 @@ d3.selectAll('.btn-group > .btn.btn-dark')
   });
 
 var svg = d3.select("#main svg");
+var pie_svg = d3.select("#pie svg");
 
 
 // Get layout parameters
@@ -122,10 +123,10 @@ var year;
 var validYears;
 
 var owner_color_map = {
-  0:"#176D5D",
-  1:"#32021F",
+  0:"#BC96E6",
+  1:"#136F63",
   2:"#DB5375",
-  3:"#564D65",
+  3:"#FFC145",
 };
 
 timelineScale = d3.scaleLinear()
@@ -192,6 +193,7 @@ function setApprCells() {
     histCell.selectAll('.x-axis').remove();
     histCell.selectAll('.y-axis').remove();
     histCell.selectAll('.title').remove();
+    pie_svg.selectAll('.title').remove();
 
     validYears = ['2014','2015','2016'];
 
@@ -217,6 +219,7 @@ function setApprCells() {
     step_size = step_sizes[attr]
 
     //TODO make a better fix -> check what attr is active
+    updatePie();
     
     year = null;
     setYear('2014');
@@ -254,6 +257,12 @@ function setApprCells() {
       .text('Home Appraisal Values')
       .attr('class', 'title')
       .attr('transform', 'translate('+[300, 20]+')');
+
+    pie_svg.append('text')
+      .text('Home Appraisal Values')
+      .attr('class', 'title')
+      .attr('text-anchor', 'middle')
+      .attr('transform', 'translate('+[+pie_svg.attr('width')/2, 40]+')');
 }
 
 
@@ -275,6 +284,7 @@ function setTaxCells() {
     histCell.selectAll('.y-axis').remove();
 
     histCell.selectAll('.title').remove();
+    pie_svg.selectAll('.title').remove();
 
     attr = 'tax';
     color_attr = 'owner_code';
@@ -295,6 +305,8 @@ function setTaxCells() {
       .domain([153,1])
       .range(["#AA2258", "#23DD99"])
       .interpolate(d3.interpolateHcl);
+
+    updatePie();
     year = null;
 
     setYear('2014');
@@ -333,12 +345,19 @@ function setTaxCells() {
       .attr('class', 'title')
       .attr('transform', 'translate('+[350, 20]+')');
 
+      pie_svg.append('text')
+        .text('Back Taxes Owed')
+        .attr('class', 'title')
+        .attr('text-anchor', 'middle')
+        .attr('transform', 'translate('+[+pie_svg.attr('width')/2, 40]+')');
+
 }
 
 function setOccupancyCells() {
     histCell.selectAll('.title').remove();
     histCell.selectAll('.y-axis').remove();
     histCell.selectAll('.x-axis').remove();
+    pie_svg.selectAll('.title').remove();
     validYears = ['2015', '2017'];
 
     attr = 'status_code';
@@ -360,6 +379,8 @@ function setOccupancyCells() {
       .interpolate(d3.interpolateHcl);
 
     step_size = 1;
+
+    updatePie();
 
     year = null;
     setYear('2015');
@@ -396,8 +417,117 @@ function setOccupancyCells() {
       .text('Occupancy Status')
       .attr('class', 'title')
       .attr('transform', 'translate('+[350, 20]+')');
+    pie_svg.append('text')
+        .text('Occupancy Status')
+        .attr('class', 'title')
+        .attr('text-anchor', 'middle')
+        .attr('transform', 'translate('+[+pie_svg.attr('width')/2, 40]+')');
 }
 
+
+function updatePie() {
+  pie_svg.selectAll('.arc').remove();
+  pie_svg.selectAll('.yearLabel').remove();
+
+  pieCenterScale = d3.scaleLinear()
+      .domain([0,validYears.length])
+      .range([0, +pie_svg.attr('width')])
+
+  pie_svg.selectAll('.yearLabel')
+    .data(validYears)
+    .enter()
+    .append('text')
+    .text(function(d) {return d;})
+    .attr('class', 'yearLabel title')
+    .attr('text-anchor', 'middle')
+    .attr('transform', function(d,i) {return 'translate('+[pieCenterScale(i+0.5), 70]+')';});
+
+  var stored_count_list = [];
+  for(var i = 0; i < validYears.length; i++) {
+    year = parseInt(validYears[i])-2000;
+    counts = {};
+    for(var j = 0; j < data.length; j++) {
+      histBins(data[j]);
+    }
+
+    count_list = []
+    var count_keys = Object.keys(counts);
+    for(var c = 0; c < count_keys.length; c++) {
+      var key = count_keys[c];
+      count_list.push(
+        { 
+          index: key,
+          count: counts[key]
+        });
+    }
+    stored_count_list.push(count_list);
+    var radius = 100;
+
+    
+
+    var pie_ = d3.pie()
+      .value(function(d) {return d.count+1;})
+      .sort(null);
+
+
+    var path = d3.arc()
+      .outerRadius(radius - 10)
+      .innerRadius(0);
+
+    var label = d3.arc()
+        .outerRadius(radius)
+        .innerRadius(radius+40);
+
+    var arc = pie_svg.append('g')
+    .attr('transform','translate('+[pieCenterScale(i+0.5),+pie_svg.attr('height')/2]+')')
+    .selectAll(".arc")
+    .data(pie_(count_list))
+    .enter().append("g")
+      .attr("class", "arc");
+
+    
+
+    arc.append("path")
+      .attr("d", path)
+      .attr("fill", function(d,i) {return gradientScale(+count_list[i].index)})
+      .style("stroke", "#000000")
+      .attr("class", "bg")
+
+    arc.append("text")
+      .attr("class", "invisible")
+      .attr("transform", function(d) { return "translate(" + label.centroid(d) + ")"; })
+      .attr("dy", "0.35em")
+      .text(function(d) { return Number(((d.endAngle - d.startAngle)/6.283)*100).toFixed(1) + "%"; })
+      .attr("text-anchor", "middle");
+
+    arc.append("text")
+      .attr("class", "invisible")
+      .attr("transform", function(d) { return "translate(" + [label.centroid(d)[0],label.centroid(d)[1] + 15] + ")"; })
+      .attr("dy", "0.35em")
+      .text(function(d) { return formatText(d.data.index * step_size);})
+      .attr("text-anchor", "middle");
+
+    arc.on('mouseover', function(d,idx) {
+        pie_svg.selectAll('.arc path')
+        .classed('hidden', 
+          function(b,jdx) {return d.data.index != b.data.index;})
+        pie_svg.selectAll('.arc text')
+        .classed('invisible', 
+          function(b,jdx) {return d.data.index != b.data.index;})
+      }).on('mouseout', function() {
+        pie_svg.selectAll('.arc path')
+        .classed('hidden', false);
+        pie_svg.selectAll('.arc text')
+        .classed('invisible', true);
+      })
+  }
+}
+
+function formatText(str) {
+  if (attr == "appr" || attr == "tax") {
+    return "<$" + str.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  } else {return status_list[parseInt(str)-1];}
+}
 
 
 function setYear(yearStr) {
@@ -549,8 +679,6 @@ function colorScale(d, attr, map) {
 }
 
 function select_points(point) {
-  console.log(parseInt(point[attr+'_'+year]/step_size) + 1);
-
   svg.selectAll(".dot")
     .classed("hidden", function(d){
         return point.st_number != d.st_number || point.st_name != d.st_name;
