@@ -1,3 +1,16 @@
+d3.selectAll('.btn-group > .btn.btn-dark')
+  .on('click', function() {
+      var attr = d3.select(this).attr('data-type');
+      if (attr == "status_code") {
+        setOccupancyCells();
+      } else if (attr == "tax") {
+        setTaxCells();
+      } else {
+        setApprCells();
+      }
+      d3.selectAll('.btn.btn-dark.active').classed('active', false);
+  });
+
 var svg = d3.select("#main svg");
 
 
@@ -5,6 +18,8 @@ var svg = d3.select("#main svg");
 var svgWidth = +svg.attr('width');
 var svgHeight = +svg.attr('height');
 
+
+//map in background
 svg.append("image")
     .attr("xlink:href", "atl.PNG")
     .attr('image-rendering','optimizeQuality')
@@ -40,6 +55,7 @@ var tableCell = svg.append('g')
 var histCell = svg.append('g')
     .attr('transform', 'translate('+[HIST_CELL_X, HIST_CELL_Y]+')');
 
+//put transparent background for histogram and table cells
 histCell.selectAll('rect').data(['h'])
     .enter().append('rect')
     .attr('class', 'bg')
@@ -54,6 +70,15 @@ tableCell.selectAll('rect').data(['h'])
     .attr('width', tableWidth)
     .attr('height', tableHeight);
 
+//neighborhood labels
+svg.selectAll('.neighborhoodLabel')
+  .data(['English Ave', 'Vine City']).enter()
+  .append('text')
+  .attr('class', 'neighborhoodLabel')
+  .text(function(d) {return d})
+  .attr('transform', function(d,i) {return 'translate('+[140, 50+i*300]+')';})
+
+//Set up timeline
 var tlPadding = 50;
 
 years = ['2014', '2015', '2016', '2017']
@@ -68,7 +93,7 @@ timeLine.selectAll('rect').data(['h'])
     .enter().append('rect')
     .attr('x', -5)
     .attr('class', 'hidden')
-    .attr('fill','#ffffff')
+    .attr('fill','#000000')
     .attr('width', 10)
     .attr('height', svgHeight/2);
 
@@ -107,23 +132,45 @@ timelineScale = d3.scaleLinear()
     .domain([0, years.length-1])
     .range([0, svgHeight/6])
 
+
+//Set up histogram legend
 var legendNodes = histCell.selectAll('g legend')
-  .data(['Person Owned', 'Investor Owned', 'Church Owned', 'Non-profit/Gov\'t Owned'])
+  .data(['Owner-Occupant/Rental', 'Investor', 'Church', 'Non-Profit/State Owned'])
 
 var lNodesEnter = legendNodes.enter()
   .append('g')
-  .attr('transform', function(d, i) {return 'translate('+[30, padding.t + 70 + timelineScale(i)]+')'});
+  .attr('class', 'legend')
+  .attr('transform', function(d, i) {return 'translate('+[15, padding.t + 70 + timelineScale(i)]+')'});
 
 lNodesEnter.append('circle')
     .attr('fill', function(d,i) {return owner_color_map[i];})
-    .attr('stroke', '#ffffff')
+    .attr('stroke', '#000000')
     .attr('r', 6);
 
 lNodesEnter.append('text')
     .text(function(d){return d})
     .attr('transform', 'translate(12, 5)');
 
+lNodesEnter
+  .on('mouseover', function(d,i) {select_legend(i);})
+  .on('mouseout', function(d) {deselect_points(d);});
 
+function select_legend(legend_val) {
+  svg.selectAll(".bar")
+    .classed("hidden", function(d){
+        return d.owner_code != legend_val;
+    });
+
+  svg.selectAll(".dot")
+    .classed("hidden", function(d){
+        return d.owner_code != legend_val;
+    });
+
+  svg.selectAll('.legend')
+    .classed("hidden", function(d,i){
+        return i != legend_val;
+    });
+}
 
 
 var color_status_map = {"Abandoned Lot": "#801515",
@@ -143,6 +190,7 @@ var status_list = Object.keys(color_status_map);
 
 function setApprCells() {
     histCell.selectAll('.x-axis').remove();
+    histCell.selectAll('.y-axis').remove();
     histCell.selectAll('.title').remove();
 
     validYears = ['2014','2015','2016'];
@@ -157,7 +205,7 @@ function setApprCells() {
     .range([padding.r, histWidth-padding.l]);
 
     histYScale = d3.scaleLinear()
-      .domain([0,25])
+      .domain([0,26])
       .range([histHeight- padding.b, padding.t]);
 
     gradientScale = d3.scaleLog()
@@ -174,6 +222,11 @@ function setApprCells() {
     setYear('2014');
 
     //make axis
+    var histYAxis = histCell.append('g')
+      .attr('class', 'y-axis')
+      .attr('transform', 'translate('+[padding.r-5,0]+')')
+      .call(d3.axisLeft(histYScale));
+
     var histXAxis = histCell.append('g')
     .attr('class', 'x-axis')
     .attr('transform', 'translate('+[0, histHeight-padding.b]+')')
@@ -200,8 +253,9 @@ function setApprCells() {
      histCell.append('text')
       .text('Home Appraisal Values')
       .attr('class', 'title')
-      .attr('transform', 'translate('+[350, 20]+')');
+      .attr('transform', 'translate('+[300, 20]+')');
 }
+
 
 function set_fill(point) {
   svg.selectAll(".bar")
@@ -218,6 +272,8 @@ function set_fill(point) {
 function setTaxCells() {
     validYears = ['2014','2015','2016'];
     histCell.selectAll('.x-axis').remove();
+    histCell.selectAll('.y-axis').remove();
+
     histCell.selectAll('.title').remove();
 
     attr = 'tax';
@@ -236,20 +292,25 @@ function setTaxCells() {
       .range([histHeight- 55, padding.t]);
 
     gradientScale = d3.scaleLog()
-      .domain([1,153])
+      .domain([153,1])
       .range(["#AA2258", "#23DD99"])
       .interpolate(d3.interpolateHcl);
     year = null;
 
     setYear('2014');
 
+    var histYAxis = histCell.append('g')
+      .attr('class', 'y-axis')
+      .attr('transform', 'translate('+[padding.r-5,0]+')')
+      .call(d3.axisLeft(histYScale));
+
     var histXAxis = histCell.append('g')
     .attr('class', 'x-axis')
     .attr('transform', 'translate('+[0, histHeight-55]+')')
     .call(d3.axisBottom(histXScale)
       //TODO make scales for every year
-      .tickValues([1,2,3,4,5,8,9, 10,14,16, 19, 24, 29, 95,127,152])
-      .tickFormat(function(d) {return '< $'+d3.format(".2s")(d*200)}))
+      .tickValues([1,2,3,4,5,8,10,14,16, 19, 24, 29, 95,127,152])
+      .tickFormat(function(d) {return '< $'+d3.format(".2s")(d*20)}))
     .selectAll("text")  
      .style("text-anchor", "end")
      .attr("dx", "-.8em")
@@ -268,7 +329,7 @@ function setTaxCells() {
       });
 
      histCell.append('text')
-      .text('Property Taxes')
+      .text('Back Taxes Owed')
       .attr('class', 'title')
       .attr('transform', 'translate('+[350, 20]+')');
 
@@ -276,6 +337,7 @@ function setTaxCells() {
 
 function setOccupancyCells() {
     histCell.selectAll('.title').remove();
+    histCell.selectAll('.y-axis').remove();
     histCell.selectAll('.x-axis').remove();
     validYears = ['2015', '2017'];
 
@@ -303,6 +365,11 @@ function setOccupancyCells() {
     setYear('2015');
 
     //make axis
+    var histYAxis = histCell.append('g')
+      .attr('class', 'y-axis')
+      .attr('transform', 'translate('+[padding.r-5,0]+')')
+      .call(d3.axisLeft(histYScale));
+
     var histXAxis = histCell.append('g')
     .attr('class', 'x-axis')
     .attr('transform', 'translate('+[0, histHeight-padding.b]+')')
@@ -383,14 +450,13 @@ d3.csv("./Brawley-Street-Built-Environment.csv",
     data = dataset;
 
     geoXScale = d3.scaleLinear()
-      .domain([-84.4145, -84.4105])
-      .range([185, geoWidth]);
+      .domain([-84.414, -84.411])
+      .range([180, geoWidth-5]);
 
     geoYScale = d3.scaleLinear()
       .domain(d3.extent(data, function(d){return d.y}))
-      .range([geoHeight-60, 30]);
+      .range([geoHeight-55, 25]);
 
-    //console.log(validYears);
     setApprCells();
 });
 
@@ -402,10 +468,8 @@ var step_sizes = {
 var counts = {};
 function histBins(d) {
   var value = d[attr+'_'+year];
-  //console.log(value);
 
   var x = parseInt(value / step_size) + 1;
-  //console.log(x)
   if (value == 'NULL') {
     x = 0;
   }
@@ -428,10 +492,13 @@ function updateHist() {
 
 
     var dotsEnter = dots.enter()
-    .append('circle')
-    .attr('r', 4)
+    .append('rect')
+    .attr('width', 8)
+    .attr('height', 8)
+    .attr('x', -4)
+    .attr('y', -8)
     .attr('class', 'dot')
-    .style('stroke', '#ffffff')
+    .style('stroke', '#000000')
     .style('fill', function(d) {return colorScale(d, color_attr, map)})
     .on('mouseover', function(d) {select_points(d);})
     .on('mouseout', function(d) {deselect_points(d);});
@@ -459,7 +526,7 @@ function updateGeo() {
     .attr('y', function(d) {return geoYScale(d.y);})
     .attr('width', 10)
     .attr('height', 5)
-    .style('stroke', '#ffffff')
+    .style('stroke', '#000000')
     .on('mouseover', function(d) {select_points(d);})
     .on('mouseout', function(d) {deselect_points(d);});
 
@@ -496,76 +563,23 @@ function select_points(point) {
 
   d3.selectAll(".table").remove();
 
-  var table = tableCell.selectAll('div')
-    .data([point])
-    .enter().append('g')
-    .attr('class', 'table')
-    .attr('id', '1')
-    .attr('transform', 'translate('+[tableWidth / 2.1,75]+')');
-    
-  table.append('text')
-    .text(point.st_number + ' ' + point.st_name)
-    .attr('transform', 'translate('+[0,-15]+')')
-    .style("text-anchor", "middle");
+  tableCell.append('foreignObject')
+  .attr('class', 'table')
+  .attr('transform', 'translate('+[-175, 20]+')')
+  .html("<table><thead><tr><td colspan='4' align=\"center\">"+point.st_number+" "+point.st_name+"</td></tr></thead>"
+       + "<tbody><tr><td align=\"right\"><b>Owner</b></td><td>"+point.owner_16+"</td><td align=\"right\"><b>2015 Occupancy</b></td><td>"+point.status_15+"</td></tr>"
+       + "<tr><td align=\"right\"><b>Neighborhood</b></td><td>"+point.neighborhood+"</td><td align=\"right\"><b>2017 Occupancy</b></td><td>"+point.status_17+"</td></tr>"
+       + "<tr><td align=\"right\"><b>2014 Appraisal</b></td><td>$"+point.appr_14+"</td><td align=\"right\"><b>2014 Back Taxes</b></td><td>$"+point.tax_14+"</td></tr>"
+       + "<tr><td align=\"right\"><b>2015 Appraisal</b></td><td>$"+point.appr_15+"</td><td align=\"right\"><b>2015 Back Taxes</b></td><td>$"+point.tax_15+"</td></tr>"
+       + "<tr><td align=\"right\"><b>2016 Appraisal</b></td><td>$"+point.appr_16+"</td><td align=\"right\"><b>2016 Back Taxes</b></td><td>$"+point.tax_16+"</td></tr></tbody></table></div>");
 
-  table.append('text')
-    .text('Owner | ' + point.owner_16)
-    .attr('transform', 'translate('+[-150,15]+')')
-    .style("text-anchor", "middle");
-
-  table.append('text')
-    .text('Neighborhood | ' + point.neighborhood)
-    .attr('transform', 'translate('+[-150,30]+')')
-    .style("text-anchor", "middle");
-    
-
-  table.append('text')
-    .text('2014 Appraisal | $' + point.appr_14)
-    .attr('transform', 'translate('+[-150,60]+')')
-    .style("text-anchor", "middle");
-
-  table.append('text')
-    .text('2015 Appraisal | $' + point.appr_15)
-    .attr('transform', 'translate('+[-150,75]+')')
-    .style("text-anchor", "middle");
-
-  table.append('text')
-    .text('2016 Appraisal | $' + point.appr_16)
-    .attr('transform', 'translate('+[-150,90]+')')
-    .style("text-anchor", "middle");
-
-  table.append('text')
-    .text('2015 Occupancy Status | ' + point.status_15)
-    .attr('transform', 'translate('+[150,15]+')')
-    .style("text-anchor", "middle");
-
-  table.append('text')
-    .text('2017 Occupancy Status | ' + point.status_17)
-    .attr('transform', 'translate('+[150,30]+')')
-    .style("text-anchor", "middle");
-
-  table.append('text')
-    .text('2014 Property Tax | $' + point.tax_14)
-    .attr('transform', 'translate('+[150,60]+')')
-    .style("text-anchor", "middle");
-
-  table.append('text')
-    .text('2015 Property Tax | $' + point.tax_15)
-    .attr('transform', 'translate('+[150,75]+')')
-    .style("text-anchor", "middle");
-
-  table.append('text')
-    .text('2016 Property Tax | $' + point.tax_16)
-    .attr('transform', 'translate('+[150,90]+')')
-    .style("text-anchor", "middle");
-
-  //table.merge(tableEnter);
-    
 }
 
 //TODO remove param
 function deselect_points(d) {
   svg.selectAll('.dot.hidden').classed('hidden', false);
   svg.selectAll('.bar.hidden').classed('hidden', false);
+  svg.selectAll('.legend.hidden').classed('hidden', false);
+
   d3.selectAll(".table").remove();
 }

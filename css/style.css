@@ -3,20 +3,16 @@
 }
 
 .tick line{
-  opacity: 0.2;
+  opacity: 0.9;
   stroke-dasharray: 5,5;
 }
 
 .bg {
-  opacity: 0.5;
+  opacity: 0.7;
 }
 
 .selected circle{
   fill: #ffcc66;
-}
-
-.legend circle {
-    stroke: #555;
 }
 
 text {
@@ -24,10 +20,51 @@ text {
     font-weight: bold;
 }
 
+.title, thead, .neighborhoodLabel {
+    font-size: 16px;
+    font-weight: bold;
+}
+.table td, .table th {
+  padding: .2rem;
+  border: none;
+}
+.table{
+  font-size:14px;
+  
+}
+
+tbody td {
+  line-height:1;
+  width:130px;
+  height:12px;
+}
+
 .bar {
-    opacity: 0.8;
+    opacity: 0.9;
 }
 
 .hidden {
   opacity: 0.2;
+}
+
+svg {
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12),
+                0 1px 2px rgba(0,0,0,0.24); 
+}
+
+p {
+  align:center;
+  max-width: 600px;
+}
+
+label.btn.btn-dark,
+label.btn.btn-dark:focus,
+label.btn.btn-dark:active,
+label.btn.btn-dark.active,
+label.btn.btn-dark.active:focus,
+label.btn.btn-dark.active:active {
+    margin: 0px 2px 0px 2px !important;
+    background-color: #595959;
+    padding: 5px 30px 5px 30px;
+
 }

@@ -8,33 +8,48 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-
-    <button onclick="setApprCells()">Appraisal Values</button>
-    <button onclick="setTaxCells()">Property Tax</button>
-    <button onclick="setOccupancyCells()">Occupancy Staus</button>
-
-
-    <div id="main">
-        <svg width="1000" height="680" style="border: 1px solid #777;"></svg>
+    <div class = "jumbotron">
+        <h1 align="center">James P Brawley Built Environment</h1>
+        <div align="center">
+            <!--<p>The visualization seeks to showcase resident collected data and walk
+            through changes pertaining to the properties on James P Brawley
+            Dr over time. The data was collected in conjunction with the
+            Westside Atlanta Land Trust in an effort to gauge the impact of a
+            potential Community Land Trust in the Vine City/English Avenue
+            area.</p>-->
+        </div>
     </div>
 
-    <!--<div id="appr">
-        <svg width="1011" height="233" style="border: 1px solid #777;"></svg>
+    <div align="center" >
+        <div class="btn-group btn-group-sm" data-toggle="buttons" >
+            <label class="btn btn-dark active" data-type="appr">
+                <input type="checkbox" name="options" autocomplete="off" checked>Appraisal Values
+            </label>
+            <label class="btn btn-dark" data-type="tax">
+                <input type="checkbox" name="options" autocomplete="off">Back Taxes
+            </label>
+            <label class="btn btn-dark" data-type="status_code">
+                <input type="checkbox" name="options" autocomplete="off">Occupancy Status
+            </label>
+        </div>
     </div>
 
-    <div id="appr-hist">
-        <svg width="500" height="300" style="border: 1px solid #777;"></svg>
+
+    <div align="center" id="main">
+        <svg width="900" height="600" style="border: 1px solid #777;"></svg>
     </div>
 
-    <div id="stat">
-        <svg width="1011" height="233" style="border: 1px solid #777;"></svg>
+    <div align="center" id="pie">
+        <svg width="900" height="400" style="border: 1px solid #777;"></svg>
     </div>
 
-    <div style="padding: 4px 60px;">
-        <label for="yearSlider" style="margin-right:6px;">2015</label>
-        <input id="yearSlider2" type="text" data-slider-min="2015" data-slider-max="2017" data-slider-step="2" data-slider-value="2015" style="width: 800px;"/>
-        <label for="yearSlider"  style="margin-left:6px;">2017</label>
-    </div>-->
+    <div align="center">
+        <a style="font-size:9pt" href="http://www.helporginc.org/walt-2015.html"><p>Westside Atlanta Land Trust Program</p></a>
+        <a style="font-size:9pt" href="https://github.com/Brawley-Built-Env/Brawley-Built-Env.github.io"><p>Github Repo</p></a>
+        <a style="font-size:9pt" href="http://civicdata.lmc.gatech.edu/"><p>Dataset</p></a>
+    </div>
+
+    
 </body>
 <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>
