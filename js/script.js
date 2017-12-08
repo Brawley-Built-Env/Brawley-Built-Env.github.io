@@ -504,14 +504,14 @@ function updatePie() {
 
     arc.append("text")
       .attr("class", "invisible")
-      .attr("transform", function(d) { return "translate(" + label.centroid(d) + ")"; })
+      .attr("transform", function(d) { return "translate(" + [label.centroid(d)[0],label.centroid(d)[1] + 15] + ")"; })
       .attr("dy", "0.35em")
       .text(function(d) { return Number(((d.endAngle - d.startAngle)/6.283)*100).toFixed(1) + "%"; })
       .attr("text-anchor", "middle");
 
     arc.append("text")
       .attr("class", "invisible")
-      .attr("transform", function(d) { return "translate(" + [label.centroid(d)[0],label.centroid(d)[1] + 15] + ")"; })
+      .attr("transform", function(d) { return "translate(" + label.centroid(d) + ")"; })
       .attr("dy", "0.35em")
       .text(function(d) { return formatText(d.data.index * step_size);})
       .attr("text-anchor", "middle");
