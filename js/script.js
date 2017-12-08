@@ -134,6 +134,15 @@ timelineScale = d3.scaleLinear()
     .range([0, svgHeight/6])
 
 
+histCell.append('text')
+.text('Number')
+.attr('transform', 'translate(165, 35)')
+.attr('text-anchor', 'end');
+
+histCell.append('text')
+.text('of Parcels')
+.attr('transform', 'translate(165, 50)')
+.attr('text-anchor', 'end');
 //Set up histogram legend
 var legendNodes = histCell.selectAll('g legend')
   .data(['Owner-Occupant/Rental', 'Investor', 'Church', 'Non-Profit/State Owned'])
@@ -141,7 +150,7 @@ var legendNodes = histCell.selectAll('g legend')
 var lNodesEnter = legendNodes.enter()
   .append('g')
   .attr('class', 'legend')
-  .attr('transform', function(d, i) {return 'translate('+[15, padding.t + 70 + timelineScale(i)]+')'});
+  .attr('transform', function(d, i) {return 'translate('+[15, padding.t + 90 + timelineScale(i)]+')'});
 
 lNodesEnter.append('circle')
     .attr('fill', function(d,i) {return owner_color_map[i];})
