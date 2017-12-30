@@ -213,10 +213,10 @@ function setApprCells() {
 
     histXScale = d3.scaleLog()
     .domain([1, 409])
-    .range([padding.r, histWidth-padding.l]);
+    .range([padding.r + 3, histWidth-padding.l]);
 
     histYScale = d3.scaleLinear()
-      .domain([0,26])
+      .domain([1,45])
       .range([histHeight- padding.b, padding.t]);
 
     gradientScale = d3.scaleLog()
@@ -237,13 +237,14 @@ function setApprCells() {
     var histYAxis = histCell.append('g')
       .attr('class', 'y-axis')
       .attr('transform', 'translate('+[padding.r-5,0]+')')
-      .call(d3.axisLeft(histYScale));
+      .call(d3.axisLeft(histYScale)
+        .tickSize(-(histWidth-padding.l-padding.r)));
 
     var histXAxis = histCell.append('g')
     .attr('class', 'x-axis')
     .attr('transform', 'translate('+[0, histHeight-padding.b]+')')
     .call(d3.axisBottom(histXScale)
-      .tickValues([1,2,3,4,5,7,10, 15,21,25, 39, 53, 151, 410])
+      .tickValues([1,2,3,4,5,7,10, 15,21,25, 39, 53, 99,151,221, 332,410])
       .tickFormat(function(d) {return '< $'+d3.format(".2s")(d*5000)}))
     .selectAll("text")  
       .style("text-anchor", "end")
@@ -302,16 +303,16 @@ function setTaxCells() {
     map = owner_color_map;
 
     histXScale = d3.scaleLog()
-    .domain([1,153])
-    .range([padding.r, histWidth-padding.l]);
+    .domain([1,750])
+    .range([padding.r + 3, histWidth-padding.l]);
 
     //TODO remove placeholder
     histYScale = d3.scaleLinear()
-      .domain([0,100])
+      .domain([1,130])
       .range([histHeight- 55, padding.t]);
 
     gradientScale = d3.scaleLog()
-      .domain([153,1])
+      .domain([750,1])
       .range(["#AA2258", "#23DD99"])
       .interpolate(d3.interpolateHcl);
 
@@ -323,14 +324,15 @@ function setTaxCells() {
     var histYAxis = histCell.append('g')
       .attr('class', 'y-axis')
       .attr('transform', 'translate('+[padding.r-5,0]+')')
-      .call(d3.axisLeft(histYScale));
+      .call(d3.axisLeft(histYScale)
+        .tickSize(-(histWidth-padding.l-padding.r)));
 
     var histXAxis = histCell.append('g')
     .attr('class', 'x-axis')
     .attr('transform', 'translate('+[0, histHeight-55]+')')
     .call(d3.axisBottom(histXScale)
       //TODO make scales for every year
-      .tickValues([1,2,3,4,5,8,10,14,16, 19, 24, 29, 95,127,152])
+      .tickValues([1,2,3,4,5,8,10,14,19, 24, 29, 64,95,127,152,240,306,539,721])
       .tickFormat(function(d) {return '< $'+d3.format(".2s")(d*20)}))
     .selectAll("text")  
      .style("text-anchor", "end")
@@ -376,10 +378,10 @@ function setOccupancyCells() {
 
     histXScale = d3.scaleLinear()
         .domain([1, status_list.length])
-        .range([padding.r, histWidth-padding.l]);
+        .range([padding.r + 3, histWidth-padding.l]);
 
     histYScale = d3.scaleLinear()
-      .domain([0,28])
+      .domain([1,45])
       .range([histHeight-padding.b, padding.t]);
 
     gradientScale = d3.scaleLog()
@@ -398,7 +400,8 @@ function setOccupancyCells() {
     var histYAxis = histCell.append('g')
       .attr('class', 'y-axis')
       .attr('transform', 'translate('+[padding.r-5,0]+')')
-      .call(d3.axisLeft(histYScale));
+      .call(d3.axisLeft(histYScale)
+        .tickSize(-(histWidth-padding.l-padding.r)));
 
     var histXAxis = histCell.append('g')
     .attr('class', 'x-axis')
@@ -558,7 +561,7 @@ function setYear(yearStr) {
 }
 
 
-d3.csv("./Brawley-Street-Built-Environment.csv", 
+d3.csv("./Brawley1221.csv", 
   function(d,i){
     return {
       st_number: +d["SITUS STREET NUMBER17"],
@@ -633,7 +636,7 @@ function updateHist() {
     var dotsEnter = dots.enter()
     .append('rect')
     .attr('width', 8)
-    .attr('height', 8)
+    .attr('height', 3)
     .attr('x', -4)
     .attr('y', -8)
     .attr('class', 'dot')
